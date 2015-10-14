@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 require "socket"
 @port_num = ARGV[0]
 server = TCPServer.open(@port_num)
