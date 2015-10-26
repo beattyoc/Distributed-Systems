@@ -4,12 +4,13 @@ require 'thread'                    # stdlib
 class Server
   def initialize()
     @port = ARGV[0]                     # portnumber parameter
-    @server = TCPServer.open(@port)     # open socket
+    @hostname = '127.0.0.1'
+    @server = TCPServer.open(@hostname, @port)     # open socket
     @ipaddress = Socket.ip_address_list.find { |ai| ai.ipv4? && !ai.ipv4_loopback? }.ip_address #get IPAddress
     @workQ = Queue.new
-    @pool_size = 5                      # for example there may be a max number of 5 threads
+    @pool_size = 10                      # for example there may be a max number of 5 threads
     puts "Current pool size is #{@pool_size}"
-    puts "Listening on port:[#{@port}]"
+    puts "Listening on: #{@hostname}:#{@port}"
     theServer
   end
 

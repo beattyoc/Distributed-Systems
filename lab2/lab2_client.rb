@@ -1,11 +1,13 @@
 require "socket"                      # get socket from stdlib
 
-s = TCPSocket.open("localhost", 8000) # open socket
+hostname = '127.0.0.1'
+port = 8000
+s = TCPSocket.open(hostname, port) # open socket
 
-#s.puts("HELO text\n")                  # writes string to socket
+s.puts("HELO text\n")                  # writes string to socket
 
 #s.puts("KILL_SERVICE\n")
-s.puts("random string")
+#s.puts("random string")
 
 while line = s.gets                   # read lines from sockets
   puts line.chop
