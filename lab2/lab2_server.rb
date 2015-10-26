@@ -4,7 +4,7 @@ require 'thread'                    # stdlib
 class Server
   def initialize()
     @port = ARGV[0]                     # portnumber parameter
-    @hostname = '127.0.0.1'
+    @hostname = '0.0.0.0'
     @server = TCPServer.open(@hostname, @port)     # open socket
     @ipaddress = Socket.ip_address_list.find { |ai| ai.ipv4? && !ai.ipv4_loopback? }.ip_address #get IPAddress
     @workQ = Queue.new
