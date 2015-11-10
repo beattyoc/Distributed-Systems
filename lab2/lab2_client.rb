@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require "socket"                      # get socket from stdlib
 
 hostname = '127.0.0.1'

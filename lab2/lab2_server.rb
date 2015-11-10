@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require 'socket'                    # Get sockets from stdlib
 require 'thread'                    # stdlib
 require 'open-uri'

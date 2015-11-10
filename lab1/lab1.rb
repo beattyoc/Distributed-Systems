@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require 'socket'      # Sockets are in standard library
 
 request = "GET /echo.php?message=abcd HTTP/1.0\r\n\r\n"
