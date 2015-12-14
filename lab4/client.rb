@@ -1,14 +1,16 @@
 #!/usr/bin/env ruby
 
-require "socket"                      # get socket from stdlib
+require 'socket'                     # get socket from stdlib
+require 'thread'
+require 'open-uri'
 
 class Client
 	def initialize(server)
 		@server = server
 		@request = nil
 		@response = nil
-		listen
 		send
+		listen
 		@request.join
 		@response.join
 	end
@@ -16,17 +18,17 @@ class Client
 	def listen
 		@response = Thread.new do
 			loop {
-				msg = $stdin.gets.chomp
+				msg = @server.gets.chomp
 				puts "#{msg}"
 			}
 		end
 	end
 
 	def send
-		puts "Enter the username:"
+		#puts 'Enter kill, join, leave or disconnect'
 		@request = Thread.new do
 			loop {
-				msg = $stdin.gets.chomp
+				msg = "JOIN_CHATROOM: chat001\nCLIENT_IP: 0\nPORT: 0\nCLIENT_NAME: user1\n"
 				@server.puts(msg) 
 			}
 		end
