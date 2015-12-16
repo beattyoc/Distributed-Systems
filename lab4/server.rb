@@ -28,12 +28,12 @@ class Server
         Thread.start(@server.accept) do | client |
           @workQ.push 1
           msg = client.gets.chomp
-          if msg.include?('HELO')          # if client writes HELO text\n
-            client.puts msg + "IP:#{@ipaddress}\nPort:#{@port}\nStudentID:[66a55996468091b1f6f3b52e3181ccbcc584d5134ccb47e80c0797fed3ca9545]\n"
-          elsif msg.include?('KILL_SERVICE')  # if client writes KILL_SERVICE
+          if msg.include?('KILL_SERVICE')  # if client writes KILL_SERVICE
             puts 'KILL REQUEST'
             client.close
             Kernel.exit
+          elsif msg.include?('HELO')          # if client writes HELO text\n
+            client.puts msg + "\nIP:#{@ipaddress}\nPort:#{@port}\nStudentID:[66a55996468091b1f6f3b52e3181ccbcc584d5134ccb47e80c0797fed3ca9545]\n"
           elsif msg.include?('JOIN_CHATROOM')
             puts 'JOIN REQUEST'
             #msg += client.gets.chomp + client.gets.chomp + client.gets.chomp
@@ -85,11 +85,20 @@ class Server
     # Get arguments
     #puts "#{msg}"
     chatroom_name = msg[/JOIN_CHATROOM:(.*)$/, 1]
-    msg = client.gets + client.gets
+    msg = client.gets
+    client_ip = msg[/CLIENT_IP:(.*)/,1]
+    msg = client.gets
+    port_num = msg[/PORT:(.*)/,1]
     msg = client.gets
     client_name = msg[/CLIENT_NAME:(.*)$/, 1]
-    puts "#{client_name} requests to join #{chatroom_name}"
+    #room.has_key?(chatroom_name)
+    @clients = client_name
     @rooms = chatroom_name
+    puts @rooms
+    @connections[:rooms] = @rooms
+    puts @connections
+    client.puts("JOINED_CHATROOM:#{chatroom_name}\nSERVER_IP:#{@ipaddress}\nPORT:#{port_num}\nROOM_REF:#{123}\nJOIN_ID:#{321}\n")
+    puts "#{client_name} requests to join #{chatroom_name}"
   end
 
   def leave_request(msg, client)
