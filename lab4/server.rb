@@ -6,9 +6,9 @@ require 'open-uri'
 class Server
   def initialize()
     @port = ARGV[0]
-    @hostname = 'localhost'
+    @hostname = '0.0.0.0'
     @server = TCPServer.open( @hostname, @port )
-    #@ipaddress = open('http://whatismyip.akamai.com').read
+    @ipaddress = open('http://whatismyip.akamai.com').read
     @workQ = Queue.new
     @pool_size = 10
     @connections = Hash.new
@@ -28,7 +28,9 @@ class Server
         Thread.start(@server.accept) do | client |
           @workQ.push 1
           msg = client.gets.chomp
-          if msg.include?('KILL_SERVICE')  # if client writes KILL_SERVICE
+          if msg.include?('HELO')          # if client writes HELO text\n
+            client.puts msg + "IP:#{@ipaddress}\nPort:#{@port}\nStudentID:[66a55996468091b1f6f3b52e3181ccbcc584d5134ccb47e80c0797fed3ca9545]\n"
+          elsif msg.include?('KILL_SERVICE')  # if client writes KILL_SERVICE
             puts 'KILL REQUEST'
             client.close
             Kernel.exit
@@ -94,7 +96,7 @@ class Server
 
   end
 
-  def chat_request(msg, client) 
+  def chat_request(msg, client)
 
   end
 
