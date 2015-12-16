@@ -6,7 +6,8 @@ require 'open-uri'
 class Server
   def initialize()
     @port = ARGV[0]
-    @hostname = '0.0.0.0'
+    #@hostname = '0.0.0.0'
+    @hostname = 'localhost'
     @server = TCPServer.open( @hostname, @port )
     @ipaddress = open('http://whatismyip.akamai.com').read
     @workQ = Queue.new
@@ -91,12 +92,13 @@ class Server
     port_num = msg[/PORT:(.*)/,1]
     msg = client.gets
     client_name = msg[/CLIENT_NAME:(.*)$/, 1]
+    join_id = SecureRandom.random_number(100)
+    puts join_id
     #room.has_key?(chatroom_name)
     @clients = client_name
     @rooms = chatroom_name
-    puts @rooms
-    @connections[:rooms] = @rooms
-    puts @connections
+    @connections[:rooms] = chatroom_name
+    @connections[:clients] = client_name
     client.puts("JOINED_CHATROOM:#{chatroom_name}\nSERVER_IP:#{@ipaddress}\nPORT:#{port_num}\nROOM_REF:#{123}\nJOIN_ID:#{321}\n")
     puts "#{client_name} requests to join #{chatroom_name}"
   end
