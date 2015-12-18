@@ -34,7 +34,7 @@ class Server
             client.close
             Kernel.exit
           elsif msg.include?('HELO')          # if client writes HELO text\n
-            client.puts msg + "\nIP:#{@ipaddress}\nPort:#{@port}\nStudentID:[66a55996468091b1f6f3b52e3181ccbcc584d5134ccb47e80c0797fed3ca9545]\n"
+            client.puts msg + "IP:#{@ipaddress}\nPort:#{@port}\nStudentID:[66a55996468091b1f6f3b52e3181ccbcc584d5134ccb47e80c0797fed3ca9545]\n"
           elsif msg.include?('JOIN_CHATROOM')
             join_request(msg, client)
           else
@@ -47,12 +47,14 @@ class Server
       end
     end
   end
-  
-  
+
+
 
   def listen_user_messages( client )
       loop do
           msg = client.gets
+         # puts msg.encoding
+          puts "message: #{msg}"
           if msg.include?('KILL_SERVICE')  # if client writes KILL_SERVICE
             client.close
             @server.close
@@ -63,10 +65,12 @@ class Server
             disconnect_request(msg, client)
           elsif msg.include?('JOIN_CHATROOM')
             join_request(msg, client)
-          else msg.include?('CHAT')
-              puts "message: #{msg}"
+          elsif msg.include?('CHAT')
               puts "CHAT REQUEST"
               chat_request(msg,client)
+          else
+              puts "ERROR"
+           #   client.puts "ERROR CODE: 001\nERROR DESCRIPTION: invalid string"
           end
     end
   end
@@ -75,14 +79,12 @@ class Server
 
   def join_request(msg, client)
 
+    msg += client.gets + client.gets + client.gets
     chatroom_name = msg[/JOIN_CHATROOM:(.*)$/, 1]
-    msg = client.gets
     client_ip = msg[/CLIENT_IP:(.*)/,1]
-    msg = client.gets
     port_num = msg[/PORT:(.*)/,1]
-    msg = client.gets
     client_name = msg[/CLIENT_NAME:(.*)$/, 1]
-    
+
     puts "#{client_name} requests to join #{chatroom_name}"
 
     join_id = ""
@@ -92,7 +94,6 @@ class Server
       join_id = SecureRandom.uuid.gsub("-", "").hex
       @clients[client_name] = join_id
       @clients_by_id[join_id.to_s] = client
-      puts "new client: #{@clients_by_id}"
     end
 
     room_ref = ""
@@ -103,34 +104,33 @@ class Server
       @rooms[chatroom_name] = room_ref
       @rooms_by_id[room_ref.to_s] = chatroom_name
     end
- 
+
     @memberships[room_ref.to_s].store "#{join_id.to_s}",1
-    
+
     client.puts("JOINED_CHATROOM:#{chatroom_name}\nSERVER_IP:#{@ipaddress}\nPORT:#{port_num}\nROOM_REF:#{room_ref}\nJOIN_ID:#{join_id}\n")
     #client.puts("CHAT:#{room_ref}\nCLIENT_NAME:#{client_name}\nMESSAGE:#{client_name} has joined this chatroom.\n\n")
     message_room("CHAT:#{room_ref}\nCLIENT_NAME:#{client_name}\nMESSAGE:#{client_name} has joined this chatroom.\n\n", room_ref)
-    
+
     listen_user_messages(client)
   end
-  
-  
-  
-  
+
+
+
+
 
   def leave_request(msg, client)
-      
+
+    msg += client.gets + client.gets
     room_ref = msg[/LEAVE_CHATROOM:(.*)$/, 1]
-    msg = client.gets
     join_id = msg[/JOIN_ID:(.*)$/, 1]
-    msg = client.gets
     client_name = msg[/CLIENT_NAME:(.*)$/, 1]
-    
+
     puts "#{client_name.strip} requests to leave a chatroom #{@rooms_by_id[room_ref.strip]}"
 
     client.puts("LEFT_CHATROOM:#{room_ref}\nJOIN_ID:#{join_id}\n")
     #client.puts("CHAT:#{room_ref}\nCLIENT_NAME:#{client_name}\nMESSAGE:#{client_name} has left this chatroom.\n\n")
     message_room("CHAT:#{room_ref}\nCLIENT_NAME:#{client_name}\nMESSAGE:#{client_name} has left this chatroom.\n\n", room_ref)
-    
+
     @memberships.each do |rr, ji|
         if (rr.strip == room_ref.strip)
             @memberships[rr].each do |members,value|
@@ -140,36 +140,47 @@ class Server
             end
         end
     end
-    
+
     listen_user_messages(client)
   end
 
 
   def chat_request(msg, client)
-      
-      puts "chat request: #{@clients_by_id}"
-      
+
+     # puts "chat request: #{@clients_by_id}"
+      msg += client.gets + client.gets + client.gets
+      puts msg
+      #puts msg.inspect
+   #   if msg =~ /CHAT:(.*)$/
+    #      puts "VALID STRING"
+     # else
+      #    puts "INVALID STRING"
+      #end
       room_ref = msg[/CHAT:(.*)$/, 1]
-      msg = client.gets
       join_id = msg[/JOIN_ID:(.*)$/, 1]
-      msg = client.gets
       client_name = msg[/CLIENT_NAME:(.*)$/, 1]
-      msg = client.gets
       message = msg[/MESSAGE:(.*)$/, 1]
-      
+
+   #   join_id_cp = @clients[client_name.strip]
+    #  if (join_id_cp.to_s.strip == join_id.to_s.strip)
+     #     puts "VERIFIED CLIENT"
+      #else
+       #   client.puts "ERROR CODE: 001\nERROR DESCRIPTION: client_name and join_id do not match"
+      #end
+
       puts "#{client_name.strip} to #{@rooms_by_id[room_ref.to_s.strip]}: #{message}"
-      
+
       send_msg = "CHAT:#{room_ref}\nCLIENT_NAME:#{client_name}\nMESSAGE:#{message}"
-      
+
       message_room(send_msg,room_ref)
-      
+
       listen_user_messages(client)
-      
+
   end
 
 
   def disconnect_request(msg, client)
-      
+
       client_ip = msg[/DISCONNECT:(.*)$/, 1]
       msg = client.gets
       port_num = msg[/PORT:(.*)$/, 1]
@@ -189,9 +200,9 @@ class Server
         end
     end
   end
-  
-  
-  
+
+
+
 
 end
 
