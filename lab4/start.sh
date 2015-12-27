@@ -1,2 +1,2 @@
 #!/bin/bash
-ruby lab2_server.rb $1
+ruby server.rb $1
