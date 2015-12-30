@@ -1,24 +1,20 @@
 #!/usr/bin/env ruby
 
 require 'socket'  
-require 'thread'                
-require 'open-uri'
+require 'thread' 
 
 class ProxyServer
 
   def initialize()
-    @serverOnePort = ARGV[1]
-    @port = ARGV[0]        
-    #@hostname = '0.0.0.0'
-    @hostname = 'localhost'
-    @serverOneHostname = 'localhost'
-    @proxyServer = TCPServer.open(@hostname, @port)
-    @fileServerOne = TCPSocket.open(@serverOneHostname, @serverOnePort)
-    @ipaddress = open('http://whatismyip.akamai.com').read
+    @fileServerPort = 8002
+    @port = 8004
+    @directoryServerPort = 8003
+    @proxyServer = TCPServer.open('localhost', @port)
+    @fileServer = TCPSocket.open('localhost', @fileServerPort)
+    @directoryServer = TCPSocket.open('localhost', @directoryServerPort)
     @workQ = Queue.new
-    @pool_size = 20
-    puts "Current pool size is #{@pool_size}"
-    puts "Listening on: #{@hostname}:#{@port}"
+    @pool_size = 10
+    puts "Client Proxy Server listening on: localhost:#{@port}"
     run
   end
 
@@ -33,7 +29,6 @@ class ProxyServer
         end
       else
         # if thread pool is full
-        puts 'Thread pool full wait 5'
         sleep 5          
         client.close
       end
@@ -44,69 +39,93 @@ class ProxyServer
   def client_handler (client)
     loop do
       msg = client.gets
-      
+      puts "Received from client: #{msg}"
+
       # if kill request
       if msg.include?('KILL_SERVICE') 
-        @fileServerOne.puts msg
+        @fileServer.puts msg
+        @fileServer.close
+        @proxyServer.close
       
       # if HELO test
       elsif msg.include?('HELO')   
-        @fileServerOne.puts msg
-        fileserverOne_handler(client)
+        @fileServer.puts msg
+        fileserver_handler(client)
 
-      # if create request
-      elsif msg.include?('CREATE')
-        @fileServerOne.puts msg
-        fileserverOne_handler(client)
-
-      # if a file request
-      elsif msg.include?('FILENAME')
-        # get filename
-        filename = msg[/FILENAME:(.*)$/,1]
+      # if an open request
+      elsif msg.include?('OPEN')
+        filename = msg[/OPEN:(.*)$/,1]
         filename = filename.strip
+        @directoryServer.puts "QUERY:#{filename}"
+        answer = @directoryServer.gets
+        send_to_fileserver(client, answer, msg)
 
-        # get command
+      # if a close request
+      elsif msg.include?('CLOSE')
+        filename = msg[/CLOSE:(.*)$/,1]
+        filename = filename.strip
+        @directoryServer.puts "QUERY:#{filename}"
+        answer = @directoryServer.gets
+        send_to_fileserver(client, answer, msg)
+
+      # if a read request
+      elsif msg.include?('READ')
+        filename = msg[/READ:(.*)$/,1]
+        filename = filename.strip
+        @directoryServer.puts "QUERY:#{filename}"
+        answer = @directoryServer.gets
+        send_to_fileserver(client, answer, msg)
+
+      # if a write request
+      elsif msg.include?('WRITE')
         msg += client.gets
-        command = msg[/COMMAND:(.*)$/,1]
-        cmd = ""
-        if command.include?('open')
-          cmd = "OPEN"
-        elsif command.include?('read')
-          cmd = "r"
-        elsif command.include?('write')
-          cmd = "w"
-        else
-          cmd = "CLOSE"
-        end
+        filename = msg[/WRITE:(.*)$/,1]
+        filename = filename.strip
+        @directoryServer.puts "QUERY:#{filename}"
+        answer = @directoryServer.gets
+        send_to_fileserver(client, answer, msg)
 
-        # send string
-        send_msg = "FILENAME:#{filename}\nCOMMAND:#{cmd}\n"
-        @fileServerOne.puts send_msg
-        fileserverOne_handler(client)
-       
       # if string not recognised
       else
-        client.puts "ERROR: invalid string\n"
+        client.puts "ERROR: invalid string"
       end  
     end
   end
 
+  # sends to correct fileserver
+  def send_to_fileserver(client, answer, msg)
+    if answer.include?('ONE')
+      @fileServer.puts msg
+      fileserver_handler(client, answer)
+    elsif answer.include?('TWO')
+      #@fileServerTwo.puts msg
+      fileserver_handler(client, answer)
+    else
+      puts "Received #{answer}"
+      client.puts "ERROR: File not found"
+    end
+    puts "returning"
+    return
+  end
+
   # handles socket connection with server one
-  def fileserverOne_handler(client)
+  def fileserver_handler(client, answer)
     loop do
-      msgOne = @fileServerOne.gets
-      puts "msgOne: #{msgOne}"
-      client.puts "msgOne: #{msgOne}"
-
-      # if query failed
-      if msgOne.include?('NOT FOUND')
-        puts "file not found in server one"
-        #redirect to server 2
-
-      # if error
+      if answer.include?('ONE')
+        msg = @fileServer.gets
+        client.puts msg
+        puts "message: " + msg
+        while(!msg.include?('END OF')) do
+          msg = @fileServer.gets
+          client.puts msg
+        end
+        client.puts "END OF FILE"
+        return
+      elsif answer.include?('TWO')
+        #msg = @fileServerTwo.gets
+        client.puts msg
       else
-        puts "ERROR\n"
-        client.puts "ERROR\n"
+        return
       end
     end
   end

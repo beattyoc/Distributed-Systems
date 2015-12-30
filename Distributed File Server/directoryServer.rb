@@ -1,22 +1,18 @@
 #!/usr/bin/env ruby
 
 require 'socket'  
-require 'thread'                
-require 'open-uri'
+require 'thread'
 
 class DirectoryServer
 
   def initialize()
-    @port = ARGV[0]
-    @serverOnePort = ARGV[1]   
-    @hostname = 'localhost'
-    @serverOneHostname = 'localhost'
-    @directoryServer = TCPServer.open(@hostname, @port)
-    @fileServerOne = TCPSocket.open(@serverOneHostname, @serverOnePort)
+    @port = 8003
+    @directoryServer = TCPServer.open('localhost', @port)
+    @fileServerOne = Hash.new
+    @fileServerOne = {1=>"file1.txt", 2=>"file2.txt", 3=>"file3.txt"}
     @workQ = Queue.new
-    @pool_size = 2
-    @response = ""
-    puts "Listening on: #{@hostname}:#{@port}"
+    @pool_size = 5
+    puts "Directory Server listening on: localhost:#{@port}"
     run
   end
 
@@ -40,34 +36,31 @@ class DirectoryServer
   def proxy_handler (proxy)
     loop do
       msg = proxy.gets
-      puts msg
+      puts "Received: #{msg}"
+
+      # if QUERY received
       if msg.include?('QUERY')
-        msg = proxy.gets
-        filename = msg[/FILENAME:(.*)$/,1]
+        filename = msg[/QUERY:(.*)$/,1]
         filename = filename.strip
-        @fileServerOne.puts "QUERY:#{filename}\n"
-        serverOne_handler(proxy, filename)
-        
-        # query 2 servers
+        find_file(filename, proxy)
+  
       else
-        proxy.puts "ERROR: not a query\n"
+        proxy.puts "ERROR: Uncrecognised request #{msg}"
       end
     end
   end
 
-  def serverOne_handler(proxy)
-    loop do
-      msg = @fileServerOne.gets
-      if msg.include?('NOTFOUND')
-        @response += "NOTFOUND: ONE\n"
-      elsif msg.include?('FOUND')
-        @response += "FOUND: ONE\n"
-      else
-        puts "ERROR: wrong string returned\n"
+  def find_file(filename, proxy)
+    @fileServerOne.each do |key, value|
+      if (value == filename)
+        puts "#{filename} found in directory one."
+        proxy.puts "ONE:#{filename}"
+        return
+      end
     end
+    return
   end
 
 end 
-
 
 directoryServer = DirectoryServer.new

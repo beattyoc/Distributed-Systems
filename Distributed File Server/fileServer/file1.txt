@@ -1,1 +1,1 @@
-WRITING TO FILE1 TEST
+writing

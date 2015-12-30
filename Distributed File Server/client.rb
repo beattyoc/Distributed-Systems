@@ -5,45 +5,61 @@ require 'socket'
 class Client
 
 	def initialize()
-		@proxyPort = 8000
-		@proxyHostname = 'localhost'
-		@proxy = TCPSocket.open(@proxyHostname, @proxyPort) # open socket
+		@proxyPort = 8004
+		@proxy = TCPSocket.open('localhost', @proxyPort) # open socket
 		run
 	end
 
 	def run
 		loop do
 			# get client command
-			print "Enter a command: "
-			cmd = STDIN.gets
-			cmd = cmd.strip
+			print "\nEnter a command 'OPEN', 'CLOSE', 'READ', or 'WRITE': "
+			msg = STDIN.gets
+			msg = msg.strip
 
-			if cmd.include?('kill')
-				puts cmd
-				@proxy.puts "KILL_SERVICE\n"
+			if msg.include?('KILL_SERIVCE')
+				@proxy.puts msg
 
-			elsif cmd.include?('helo')
-				@proxy.puts "HELO base test\n"
+			elsif msg.include?('HELO')
+				@proxy.puts msg
 
-			elsif cmd.include?('create')
-				print "Enter filename: "
+			elsif msg.include?('OPEN')
+				print "\nEnter filename 'file1.txt', 'file2.txt' or 'file3.txt': "
 				filename = STDIN.gets
 				filename = filename.strip
-				send_msg = "CREATE: #{filename}\n"
-				@proxy.puts send_msg
+				request = "OPEN:#{filename}\n"
+				@proxy.puts request
 				message_handler
 
-			elsif cmd.include?('open' || 'close' || 'read' || 'write')
-				print "Enter filename: "
+			elsif msg.include?('CLOSE')
+				print "\nEnter filename 'file1.txt', 'file2.txt' or 'file3.txt': "
 				filename = STDIN.gets
 				filename = filename.strip
-				send_msg = "FILENAME:#{filename}\nCOMMAND:#{cmd}\n"
-				@proxy.puts send_msg
-				puts send_msg
+				request = "CLOSE:#{filename}\n"
+				@proxy.puts request
+				message_handler
+
+			elsif msg.include?('READ')
+				print "\nEnter filename 'file1.txt', 'file2.txt' or 'file3.txt': "				
+				filename = STDIN.gets
+				filename = filename.strip
+				request = "READ:#{filename}\n"
+				@proxy.puts request
+				message_handler
+
+			elsif msg.include?('WRITE')
+				print "\nEnter filename 'file1.txt', 'file2.txt' or 'file3.txt': "
+				filename = STDIN.gets
+				filename = filename.strip
+				print "Enter message: "
+				message = STDIN.gets
+				message = message.strip
+				request = "WRITE:#{filename}\nMESSAGE:#{message}"
+				@proxy.puts request
 				message_handler
 
 			else 
-				puts "Unknown string please enter 'kill', 'helo', 'open', 'close', 'read', 'create' or 'write'"
+				puts "\nERROR: Please enter 'KILL_SERVICE', 'HELO', 'READ' or ''WRITE'\n"
 			end
 		end
 	end
@@ -52,6 +68,11 @@ class Client
 		loop do
 			msg = @proxy.gets
 			puts msg
+			if msg.include?('END OF')
+				return
+			elsif msg.include?('ERROR')
+				return
+			end
 		end
 	end
 
