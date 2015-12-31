@@ -11,10 +11,8 @@ class ReplicaServer
     @hostname = 'localhost'
     @replicaServer = TCPServer.open(@hostname, @port)
     @workQ = Queue.new
-    @pool_size = 2
-    @Files = Hash.new
-    #puts "Current pool size is #{@pool_size}"
-    puts "Replication Server listening on: localhost:#{@port}"
+    @pool_size = 10
+    puts "\nReplication Server listening on: localhost:#{@port}"
     run
   end
 
@@ -60,10 +58,12 @@ class ReplicaServer
     aFile = File.open(filename, 'w+')
     if aFile
       File.write(filename, message)
-      File.close(filename)
+      puts "Updated: #{filename}"
     else
       client.puts "ERROR: Unable to open file #{filename}"
     end
+    aFile.close
+    return
   end
 
 

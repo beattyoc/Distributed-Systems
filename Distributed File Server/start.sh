@@ -1,3 +1,7 @@
 #!/bin/bash
-ruby fileServerOne.rb $1
-ruby proxyServer.rb $2 $1
+ruby ./replicationServer/replicaServer.rb &
+ruby ./lockServer.rb &
+ruby ./fileServer/fileServer.rb &
+ruby ./directoryServer.rb &
+ruby ./proxyServer.rb #&
+#ruby ./client.rb

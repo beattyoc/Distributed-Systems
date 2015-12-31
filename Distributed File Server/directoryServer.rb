@@ -11,8 +11,8 @@ class DirectoryServer
     @fileServerOne = Hash.new
     @fileServerOne = {1=>"file1.txt", 2=>"file2.txt", 3=>"file3.txt"}
     @workQ = Queue.new
-    @pool_size = 5
-    puts "Directory Server listening on: localhost:#{@port}"
+    @pool_size = 10
+    puts "\nDirectory Server listening on: localhost:#{@port}"
     run
   end
 

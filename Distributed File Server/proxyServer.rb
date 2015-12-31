@@ -14,7 +14,7 @@ class ProxyServer
     @directoryServer = TCPSocket.open('localhost', @directoryServerPort)
     @workQ = Queue.new
     @pool_size = 10
-    puts "Client Proxy Server listening on: localhost:#{@port}"
+    puts "\nClient Proxy Server listening on: localhost:#{@port}"
     run
   end
 
@@ -95,16 +95,17 @@ class ProxyServer
   # sends to correct fileserver
   def send_to_fileserver(client, answer, msg)
     if answer.include?('ONE')
+      puts "File in server ONE"
       @fileServer.puts msg
       fileserver_handler(client, answer)
     elsif answer.include?('TWO')
+      puts "File in server TWO"
       #@fileServerTwo.puts msg
       fileserver_handler(client, answer)
     else
       puts "Received #{answer}"
       client.puts "ERROR: File not found"
     end
-    puts "returning"
     return
   end
 
@@ -114,12 +115,10 @@ class ProxyServer
       if answer.include?('ONE')
         msg = @fileServer.gets
         client.puts msg
-        puts "message: " + msg
         while(!msg.include?('END OF')) do
           msg = @fileServer.gets
           client.puts msg
         end
-        client.puts "END OF FILE"
         return
       elsif answer.include?('TWO')
         #msg = @fileServerTwo.gets
