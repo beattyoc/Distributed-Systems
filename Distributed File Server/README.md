@@ -12,10 +12,10 @@ All servers are defaulted to run on 'localhost' from ports 8000 to 8004
 5. ./proxyServer.rb
 6. ./client.rb
 
-###*You may also try ./start.sh which starts all servers in 1 terminal window, and then ./client.rb in a separate terminal window for best user interface.*
+*You may also try ./start.sh which starts all servers in 1 terminal window, and then ./client.rb in a separate terminal window for best user interface.*
 
 ##Project Components:
--Distributed Transparent File Access
--Directory Service
--Lock Service
--Replication
+* Distributed Transparent File Access
+* Directory Service
+* Lock Service
+* Replication
